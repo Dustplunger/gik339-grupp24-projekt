@@ -1,0 +1,24 @@
+{
+  "name": "gik339-grupp24-projekt",
+  "version": "1.0.0",
+  "description": "Projek",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dustplunger/gik339-grupp24-projekt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Dustplunger/gik339-grupp24-projekt/issues"
+  },
+  "homepage": "https://github.com/Dustplunger/gik339-grupp24-projekt#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
