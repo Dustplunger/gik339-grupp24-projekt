@@ -11,7 +11,7 @@
 <div class="container py-4">
   <h1 class="mb-4">Filmer CRUD</h1>
 
-  <form id="filmForm" class="mb-4">
+  <form id="filmForm" class="mb-4" novalidate>
     <input type="hidden" id="filmId" />
     <div class="mb-3">
       <label for="titel" class="form-label">Titel</label>
@@ -23,11 +23,11 @@
     </div>
     <div class="mb-3">
       <label for="genre" class="form-label">Genre</label>
-      <input type="text" class="form-control" id="genre" />
+      <input type="text" class="form-control" id="genre" required />
     </div>
     <div class="mb-3">
-      <label for="betyg" class="form-label">Betyg</label>
-      <input type="number" class="form-control" id="betyg" min="1" max="10" />
+      <label for="betyg" class="form-label">Betyg (1-10)</label>
+      <input type="number" class="form-control" id="betyg" min="1" max="10" required />
     </div>
     <button type="submit" class="btn btn-primary">Spara</button>
     <button type="button" id="rensaBtn" class="btn btn-secondary ms-2">Rensa</button>
@@ -44,6 +44,13 @@
   const meddelande = document.getElementById('meddelande');
   const rensaBtn = document.getElementById('rensaBtn');
 
+  // Variabler från formulärfälten
+  const filmIdField = document.getElementById('filmId');
+  const titelField = document.getElementById('titel');
+  const årField = document.getElementById('år');
+  const genreField = document.getElementById('genre');
+  const betygField = document.getElementById('betyg');
+
   function visaMeddelande(text, typ = 'success') {
     meddelande.textContent = text;
     meddelande.className = 'alert alert-' + typ;
@@ -51,99 +58,122 @@
     setTimeout(() => meddelande.classList.add('d-none'), 3000);
   }
 
-  function hamtaFilmer() {
-    fetch('/filmer')
-      .then(res => res.json())
-      .then(data => {
-        filmerList.innerHTML = '';
-        data.forEach(film => {
-          const card = document.createElement('div');
-          card.className = 'col-md-4';
-          card.innerHTML = `
-            <div class="card h-100">
-              <div class="card-body">
-                <h5 class="card-title">${film.titel}</h5>
-                <p class="card-text">År: ${film.år || '-'}</p>
-                <p class="card-text">Genre: ${film.genre || '-'}</p>
-                <p class="card-text">Betyg: ${film.betyg || '-'}</p>
-                <button class="btn btn-sm btn-warning me-2" onclick="editFilm(${film.id})">Redigera</button>
-                <button class="btn btn-sm btn-danger" onclick="taBortFilm(${film.id})">Ta bort</button>
-              </div>
+  async function hamtaFilmer() {
+    try {
+      const res = await fetch('/filmer');
+      if (!res.ok) throw new Error('Fel vid hämtning av filmer');
+      const data = await res.json();
+
+      filmerList.innerHTML = '';
+      data.forEach(film => {
+        const card = document.createElement('div');
+        card.className = 'col-md-4';
+        card.innerHTML = `
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">${film.titel}</h5>
+              <p class="card-text">År: ${film.år ?? '-'}</p>
+              <p class="card-text">Genre: ${film.genre ?? '-'}</p>
+              <p class="card-text">Betyg: ${film.betyg ?? '-'}</p>
+              <button class="btn btn-sm btn-warning me-2" onclick="editFilm(${film.id})">Redigera</button>
+              <button class="btn btn-sm btn-danger" onclick="taBortFilm(${film.id})">Ta bort</button>
             </div>
-          `;
-          filmerList.appendChild(card);
-        });
+          </div>
+        `;
+        filmerList.appendChild(card);
       });
+    } catch (e) {
+      visaMeddelande(e.message, 'danger');
+    }
   }
 
-  function editFilm(id) {
-    fetch('/filmer/' + id)
-      .then(res => res.json())
-      .then(film => {
-        document.getElementById('filmId').value = film.id;
-        document.getElementById('titel').value = film.titel;
-        document.getElementById('år').value = film.år || '';
-        document.getElementById('genre').value = film.genre || '';
-        document.getElementById('betyg').value = film.betyg || '';
-      });
+  async function editFilm(id) {
+    try {
+      const res = await fetch('/filmer/' + id);
+      if (!res.ok) throw new Error('Kunde inte hämta filmen');
+      const film = await res.json();
+
+      filmIdField.value = film.id;
+      titelField.value = film.titel;
+      årField.value = film.år || '';
+      genreField.value = film.genre || '';
+      betygField.value = film.betyg || '';
+    } catch (e) {
+      visaMeddelande(e.message, 'danger');
+    }
   }
 
-  function taBortFilm(id) {
+  async function taBortFilm(id) {
     if (!confirm('Vill du ta bort denna film?')) return;
-    fetch('/filmer/' + id, { method: 'DELETE' })
-      .then(res => res.json())
-      .then(data => {
-        visaMeddelande(data.message, 'success');
-        hamtaFilmer();
-        rensaForm();
-      });
+    try {
+      const res = await fetch('/filmer/' + id, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Fel vid borttagning');
+      visaMeddelande(data.message);
+      hamtaFilmer();
+      rensaForm();
+    } catch (e) {
+      visaMeddelande(e.message, 'danger');
+    }
   }
 
   function rensaForm() {
     filmForm.reset();
-    document.getElementById('filmId').value = '';
+    filmIdField.value = '';
   }
 
-  filmForm.addEventListener('submit', e => {
+  filmForm.addEventListener('submit', async e => {
     e.preventDefault();
-    const id = document.getElementById('filmId').value;
-    const titel = document.getElementById('titel').value.trim();
-    const år = parseInt(document.getElementById('år').value);
-    const genre = document.getElementById('genre').value.trim();
-    const betyg = parseInt(document.getElementById('betyg').value);
 
-    const filmData = { titel, år: isNaN(år) ? null : år, genre, betyg: isNaN(betyg) ? null : betyg };
+    // Hämta värden från variabler
+    const id = filmIdField.value;
+    const titel = titelField.value.trim();
+    const år = årField.value ? parseInt(årField.value) : null;
+    const genre = genreField.value.trim();
+    const betyg = betygField.value ? parseInt(betygField.value) : null;
 
-    if (id) {
-      filmData.id = parseInt(id);
-      fetch('/filmer', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filmData)
-      })
-        .then(res => res.json())
-        .then(data => {
-          visaMeddelande(data.message, data.error ? 'danger' : 'success');
-          hamtaFilmer();
-          rensaForm();
+    // Enkel frontend-validering
+    if (betyg === null || betyg < 1 || betyg > 10) {
+      visaMeddelande('Betyg måste vara mellan 1 och 10', 'danger');
+      return;
+    }
+    if (!titel || !genre) {
+      visaMeddelande('Titel och genre måste fyllas i', 'danger');
+      return;
+    }
+
+    const filmData = { titel, år, genre, betyg };
+
+    try {
+      let res, data;
+      if (id) {
+        filmData.id = parseInt(id);
+        res = await fetch('/filmer', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filmData),
         });
-    } else {
-      fetch('/filmer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filmData)
-      })
-        .then(res => res.json())
-        .then(data => {
-          visaMeddelande(data.message, data.error ? 'danger' : 'success');
-          hamtaFilmer();
-          rensaForm();
+      } else {
+        res = await fetch('/filmer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filmData),
         });
+      }
+      data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Fel vid sparande');
+      visaMeddelande(data.message);
+      hamtaFilmer();
+      rensaForm();
+    } catch (e) {
+      visaMeddelande(e.message, 'danger');
     }
   });
 
   rensaBtn.addEventListener('click', rensaForm);
 
+  // Ladda filmer vid start
   hamtaFilmer();
 </script>
 
