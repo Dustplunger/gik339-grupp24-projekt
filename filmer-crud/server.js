@@ -10,7 +10,6 @@ app.use(express.static("public"));
 
 const db = new sqlite3.Database("./filmer.db");
 
-// Skapa tabell filmer med rätt kolumner
 db.run(`
   CREATE TABLE IF NOT EXISTS filmer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,7 +20,6 @@ db.run(`
   )
 `);
 
-// GET - hämta alla filmer
 app.get("/filmer", (req, res) => {
   db.all("SELECT * FROM filmer", (err, rows) => {
     if (err) {
@@ -31,7 +29,6 @@ app.get("/filmer", (req, res) => {
   });
 });
 
-// GET - hämta en film via id
 app.get("/filmer/:id", (req, res) => {
   const id = req.params.id;
   db.get("SELECT * FROM filmer WHERE id = ?", [id], (err, row) => {
@@ -45,7 +42,6 @@ app.get("/filmer/:id", (req, res) => {
   });
 });
 
-// POST - skapa film
 app.post("/filmer", (req, res) => {
   try {
     const { titel, år, genre, betyg } = req.body;
@@ -70,7 +66,6 @@ app.post("/filmer", (req, res) => {
   }
 });
 
-// PUT - uppdatera film
 app.put("/filmer", (req, res) => {
   try {
     const { id, titel, år, genre, betyg } = req.body;
@@ -96,7 +91,6 @@ app.put("/filmer", (req, res) => {
   }
 });
 
-// DELETE - ta bort film
 app.delete("/filmer/:id", (req, res) => {
   const id = req.params.id;
   db.run("DELETE FROM filmer WHERE id = ?", [id], function (err) {

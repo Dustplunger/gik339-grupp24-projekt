@@ -44,7 +44,6 @@
   const meddelande = document.getElementById('meddelande');
   const rensaBtn = document.getElementById('rensaBtn');
 
-  // Variabler från formulärfälten
   const filmIdField = document.getElementById('filmId');
   const titelField = document.getElementById('titel');
   const årField = document.getElementById('år');
@@ -132,7 +131,6 @@
     const genre = genreField.value.trim();
     const betyg = betygField.value ? parseInt(betygField.value) : null;
 
-    // Enkel frontend-validering
     if (betyg === null || betyg < 1 || betyg > 10) {
       visaMeddelande('Betyg måste vara mellan 1 och 10', 'danger');
       return;
